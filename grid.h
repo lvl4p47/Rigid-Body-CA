@@ -78,6 +78,7 @@ uint32_t Rec_Push_Away(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t stren
 uint32_t Rec_Push_Attempt(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength, uint8_t rigid);
 int32_t Rec_Push_CoM(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength);
 void Rec_Link_All(int16_t x, int16_t y, int32_t strength);
+void Link_Two(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 void Rec_Connect(int16_t x, int16_t y, int32_t strength);
 uint8_t Is_Membrane(int16_t x, int16_t y);
 uint8_t Neighbor_Energy(int16_t x, int16_t y);
@@ -101,6 +102,10 @@ typedef struct {
     uint8_t used;
     uint32_t prev;
     uint32_t next;
+    
+    uint8_t Z, e;
+    uint16_t energy;
+    uint8_t shared;
 } Cell;
 
 extern Cell cells[MAX_CELLS];

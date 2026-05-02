@@ -33,12 +33,21 @@ void Cells_Init()
         cells[id].prev = 0;
         cells[id].next = 0;
         cells[id].used = 0;
+        
+        cells[id].Z = 0;
+        cells[id].e = 0;
+        cells[id].energy = 0;
     }
     
     free_id = 1;
+    
+    // for(int z = 1; z < 37; z++)
+    // {
+    //     printf("z %d exs %d req %d\n", z, Valence(z), Required_Electrons(z));
+    // }
 }
 
-void Cell_Create(int16_t x, int16_t y, uint32_t parent)
+void Cell_Create(int16_t x, int16_t y, uint32_t parent, uint8_t Z)
 {
     if(Grid_Get(x, y)->type != 1 || Grid_Get(x, y)->id != 0) return;
     
@@ -51,6 +60,11 @@ void Cell_Create(int16_t x, int16_t y, uint32_t parent)
     cells[id].prev = cells[parent].prev;
     cells[id].next = parent;
     cells[id].used = 1;
+    
+    cells[id].Z = Z;
+    cells[id].e = Z;
+    cells[id].energy = 0;
+    cells[id].shared = 0;
     
     cells[cells[id].prev].next = id;
     cells[parent].prev = id;
@@ -107,51 +121,14 @@ void Cells_Update()
 
 void Cell_Update_Start(uint32_t id)
 {
-    uint16_t x, y;
-    x = cells[id].x;
-    y = cells[id].y;
-
-    Tile *itself, *neighbor;
-    int8_t dx, dy;
-    uint8_t mask, n_state;
-    
-    itself = Grid_Get(x, y);
-    itself->buf_state = itself->state;
-    
-    if(itself->type != 1) return;
-    
-    if(itself->state == 0)
-    {
-        itself->buf_state = 1;
-        return;
-    }
-    if(itself->state != 1)
-    {
-        itself->buf_state = 0;
-        return;
-    }
-    
-    for(int dir = 0; dir < 8; dir++)
-    {
-        dx = dir_to_coords[dir][0];
-        dy = dir_to_coords[dir][1];
-        mask = (uint8_t)1 << dir;
-        
-        if(itself->links & mask)
-        {
-            neighbor = Grid_Get(x + dx, y + dy);
-            n_state = neighbor->state;
-            
-            if(n_state == 0 || n_state == 1) continue;
-            
-            if(abs(itself->buf_state - itself->des_state) > abs(itself->des_state - n_state))
-                itself->buf_state = n_state;
-        }
-    }
+    // cells[id].shared = Required_Electrons(cells[id].e);
 }
 
 void Cell_Update_Finish(uint32_t id)
 {
+    uint8_t req = Required_Electrons(cells[id].e);
+    if(req == 0) return;
+
     uint16_t x, y;
     x = cells[id].x;
     y = cells[id].y;
@@ -163,59 +140,75 @@ void Cell_Update_Finish(uint32_t id)
     uint8_t membrane = Is_Membrane(x, y);
     
     itself = Grid_Get(x, y);
-    itself->state = itself->buf_state;
     
-    // switch (itself->state)
-    // {
-    // case 2:
-    //     if(membrane < 6) break;
-    //     for(int dir = 0; dir < 8; dir++)
-    //     {
-    //         dx = dir_to_coords[dir][0];
-    //         dy = dir_to_coords[dir][1];
-    //         mask = (uint8_t)1 << dir;
+    for(int dir = 0; dir < 8; dir++)
+    {
+        dx = dir_to_coords[dir][0];
+        dy = dir_to_coords[dir][1];
+        mask = (uint8_t)1 << dir;
+        
+        if(!(itself->links & mask))
+        {
+            neighbor = Grid_Get(x + dx, y + dy);
             
-    //         if(itself->links & mask)
-    //         {
-    //             neighbor = Grid_Get(x + dx, y + dy);
-    //             n_state = neighbor->state;
-                
-    //             if(n_state == 0)
-    //             {
-    //                 temp1 = mod(coords_to_dir[dy + 1][dx + 1] + 1, 8);
-    //                 Rec_Push(x, y, dir_to_coords[temp1][0], dir_to_coords[temp1][1], 16, 0);
-    //                 break;
-    //             }
-    //         }
-    //     }
-    //     break;
-    // case 3:
-    //     if(membrane < 6) break;
-    //     for(int dir = 0; dir < 8; dir++)
-    //     {
-    //         dx = dir_to_coords[dir][0];
-    //         dy = dir_to_coords[dir][1];
-    //         mask = (uint8_t)1 << dir;
-            
-    //         if(itself->links & mask)
-    //         {
-    //             neighbor = Grid_Get(x + dx, y + dy);
-    //             n_state = neighbor->state;
-                
-    //             if(n_state == 0)
-    //             {
-    //                 temp1 = mod(coords_to_dir[dy + 1][dx + 1] - 1, 8);
-    //                 Rec_Push(x, y, dir_to_coords[temp1][0], dir_to_coords[temp1][1], 16, 0);
-    //                 break;
-    //             }
-    //         }
-    //     }
-    //     break;
+            if(cells[id].shared < Valence(cells[id].e)
+            && Required_Electrons(cells[id].e) - cells[id].shared > 0
+            && cells[neighbor->id].shared < Valence(cells[neighbor->id].e)
+            && Required_Electrons(cells[neighbor->id].e) - cells[neighbor->id].shared > 0)
+            {
+                cells[id].shared++;
+                cells[neighbor->id].shared++;
+                Link_Two(x, y, x + dx, y + dy);
+            }
+        }
+    }
+}
+
+uint8_t Valence(uint8_t e)
+{
+    uint8_t total_e = e;
+    uint8_t level = 1;
+    uint8_t valence = 0;
+    uint8_t max_on_level;
     
-    // default:
-    //     break;
-    // }
+    while(total_e > 0)
+    {
+        max_on_level = 2 * level * level;
+        if(total_e <= max_on_level)
+        {
+            valence = total_e;
+            break;
+        }
+        total_e -= max_on_level;
+        level += 1;
+    }
     
-    // if(rnd() % mutation_rarity == 0)
-    //     Grid_Signal(x, y, (rnd() % max_states) * (rnd() % 2));
+    return valence;
+}
+
+uint8_t Required_Electrons(uint8_t e)
+{
+    uint8_t total_e = e;
+    uint8_t level = 1;
+    uint8_t valence = 0;
+    uint8_t max_on_level;
+    
+    while(total_e > 0)
+    {
+        max_on_level = 2 * level * level;
+        if(total_e <= max_on_level)
+        {
+            valence = total_e;
+            break;
+        }
+        total_e -= max_on_level;
+        level += 1;
+    }
+    
+    return max_on_level - valence;
+}
+
+uint16_t Energy(uint32_t id1, uint32_t id2)
+{
+    
 }

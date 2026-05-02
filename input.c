@@ -89,14 +89,14 @@ void Events_Handle()
                 dest_x = x;
                 dest_y = y;
                 
-                Grid_Signal(x, y, 2);
+                // Grid_Signal(x, y, 2);
                 
             }
             if (e.button.button == SDL_BUTTON_MIDDLE) 
             {
                 mmb_held = 1;
                 
-                Rec_Connect(x, y, 100);
+                // Rec_Connect(x, y, 100);
                 // if(Grid_Get(x, y)->id == 0)
                     
                 // else
@@ -129,17 +129,23 @@ void Events_Handle()
                 if(Grid_Get(x, y)->type == 0)
                 {
                     Grid_Set(x, y, 1);
-                    Cell_Create(x, y, 0);
+                    Cell_Create(x, y, 0, 1);
                 }
             }
             if (mmb_held == 1)
             {
-                
+                if(Grid_Get(x, y)->type == 0)
+                {
+                    Grid_Set(x, y, 1);
+                    Cell_Create(x, y, 0, 8);
+                }
             }
             if (lmb_held == 1)
             {
                 dest_x = x;
                 dest_y = y;
+                
+                
             }
         }
     }

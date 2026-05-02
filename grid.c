@@ -758,6 +758,29 @@ void Rec_Link_All(int16_t x, int16_t y, int32_t strength)
     }
 }
 
+void Link_Two(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+{
+    Tile *center = Grid_Get(x1, y1);
+    Tile *neighbor = Grid_Get(x2, y2);
+
+    uint8_t mask, opposite;
+    int16_t dx = x2 - x1;
+    int16_t dy = y2 - y1;
+    
+    if(max(abs(dx), abs(dy)) > 1) return;
+    
+    uint8_t dir = coords_to_dir[dy + 1][dx + 1];
+    
+    mask = (uint8_t)1 << dir;
+    opposite = (uint8_t)1 << mod(dir + 4, 8);
+    
+    if(neighbor->type == 1 && center->type == 1)
+    {
+        center->links |= mask;
+        neighbor->links |= opposite;
+    }
+}
+
 void Rec_Connect(int16_t x, int16_t y, int32_t strength)
 {
     Rec_Link_All(x, y, strength);
