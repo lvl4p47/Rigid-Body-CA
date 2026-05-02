@@ -29,6 +29,9 @@ uint16_t sun_height = 255;
 uint16_t sun_light = 0;
 uint32_t day_length = 10000;
 
+uint8_t max_states = 4;
+uint8_t max_links = 3;
+
 void Grid_Init(uint16_t w, uint16_t h)
 {
     grid_width = w;
@@ -68,7 +71,7 @@ void Grid_Reset(uint8_t type, uint16_t chance)
         {
             if(rnd() % 1000 < chance)
             {   
-                Grid_Set(j, i, 0, type);
+                Grid_Set(j, i, type);
             }
         }
     }
@@ -81,24 +84,26 @@ void Border()
     {
         for(int i = 0; i < grid_height; i++)
         {
-            Grid_Set(0, i, 0, 2);
-            Grid_Set(grid_width - 1, i, 0, 2);
+            Grid_Set(0, i, 2);
+            Grid_Set(grid_width - 1, i, 2);
         }
         for(int j = 0; j < grid_width; j++)
         {
-            Grid_Set(j, 0, 0, 2);
-            Grid_Set(j, grid_height - 1, 0, 2);
+            Grid_Set(j, 0, 2);
+            Grid_Set(j, grid_height - 1, 2);
         }
     }
 }
 
-void Grid_Set(int16_t x, int16_t y, uint32_t id, uint8_t type)
+void Grid_Set(int16_t x, int16_t y, uint8_t type)
 {
     if(debug) fprintf(stderr, "\nGrid_Set"), fflush(stderr);
     uint16_t x1 = mod(x, grid_width);
     uint16_t y1 = mod(y, grid_height);
     
-    grid_array[y1][x1].id = id;
+    grid_array[y1][x1].state = 1;
+    grid_array[y1][x1].buf_state = 0;
+    grid_array[y1][x1].des_state = max_states - 1;
     grid_array[y1][x1].type = type;
     grid_array[y1][x1].matter = 0;
     grid_array[y1][x1].energy = 0;
@@ -106,6 +111,7 @@ void Grid_Set(int16_t x, int16_t y, uint32_t id, uint8_t type)
     grid_array[y1][x1].on_edge = 0;
     grid_array[y1][x1].links = 0;
     grid_array[y1][x1].buf_links = 0;
+    grid_array[y1][x1].id = 0;
     
     {
         Tile *tile = Grid_Get(x, y);
@@ -135,7 +141,14 @@ void Grid_Move(int16_t x, int16_t y, int16_t dx, int16_t dy)
     
     if(grid_array[y2][x2].type != 0) return;
     
-    grid_array[y2][x2].id = grid_array[y1][x1].id;
+    uint32_t id = grid_array[y1][x1].id;
+    
+    cells[id].x = x2;
+    cells[id].y = y2;
+    
+    grid_array[y2][x2].state = grid_array[y1][x1].state;
+    grid_array[y2][x2].buf_state = grid_array[y1][x1].buf_state;
+    grid_array[y2][x2].des_state = grid_array[y1][x1].des_state;
     grid_array[y2][x2].type = grid_array[y1][x1].type;
     grid_array[y2][x2].matter = grid_array[y1][x1].matter;
     grid_array[y2][x2].energy = grid_array[y1][x1].energy;
@@ -143,8 +156,11 @@ void Grid_Move(int16_t x, int16_t y, int16_t dx, int16_t dy)
     grid_array[y2][x2].on_edge = 0;
     grid_array[y2][x2].links = grid_array[y1][x1].links;
     grid_array[y2][x2].buf_links = 0;
+    grid_array[y2][x2].id = grid_array[y1][x1].id;
     
-    grid_array[y1][x1].id = 0;
+    grid_array[y1][x1].state = 0;
+    grid_array[y1][x1].buf_state = 0;
+    grid_array[y1][x1].des_state = 0;
     grid_array[y1][x1].type = 0;
     grid_array[y1][x1].matter = 0;
     grid_array[y1][x1].energy = 0;
@@ -152,6 +168,7 @@ void Grid_Move(int16_t x, int16_t y, int16_t dx, int16_t dy)
     grid_array[y1][x1].on_edge = 0;
     grid_array[y1][x1].links = 0;
     grid_array[y1][x1].buf_links = 0;
+    grid_array[y1][x1].id = 0;
     
     if(x1 == grab_x && y1 == grab_y && lmb_held)
     {
@@ -160,12 +177,12 @@ void Grid_Move(int16_t x, int16_t y, int16_t dx, int16_t dy)
     }
 }
 
-void Grid_Update()
+void Grid_Maintain()
 {
     if(debug) 
     {
         freopen("debug.log", "w", stderr);
-        fprintf(stderr, "\nGrid_Update"), fflush(stderr);
+        fprintf(stderr, "\nGrid_Maintain"), fflush(stderr);
     }
     Tile *tile;
     
@@ -178,6 +195,33 @@ void Grid_Update()
             {
                 Phero_Get(j, i, type, 1);
             }
+        }
+    }
+}
+
+void Grid_Signal(int16_t x, int16_t y, uint8_t state)
+{
+    Tile *itself, *neighbor;
+    int8_t dx, dy;
+    uint8_t mask;
+    uint8_t dir;
+    uint8_t rand = rnd() % 8;
+    
+    itself = Grid_Get(x, y);
+    itself->state = state;
+    
+    for(int rnd_dir = rand; rnd_dir < rand + 8; rnd_dir++)
+    {
+        dir = mod(rnd_dir, 8);
+        dx = dir_to_coords[dir][0];
+        dy = dir_to_coords[dir][1];
+        mask = (uint8_t)1 << dir;
+        
+        if(itself->links & mask)
+        {
+            neighbor = Grid_Get(x + dx, y + dy);
+            neighbor->state = 0;
+            break;
         }
     }
 }
@@ -654,7 +698,8 @@ void Rec_Link_All(int16_t x, int16_t y, int32_t strength)
     
     uint8_t mask, opposite;
     int16_t dx, dy;
-    for(uint8_t dir = 0; dir < 8; dir++)
+    
+    for(uint8_t dir = 1; dir < 8; dir += 2)
     {
         mask = (uint8_t)1 << dir;
         opposite = (uint8_t)1 << mod(dir + 4, 8);
@@ -667,17 +712,49 @@ void Rec_Link_All(int16_t x, int16_t y, int32_t strength)
             continue;
         }
         
-        if(neighbor->type == 1)
+        if(Count_Bits_8(center->links) < max_links
+        && Count_Bits_8(neighbor->links) < max_links)
         {
-            center->links |= mask;
-            neighbor->links |= opposite;
+            if(neighbor->type == 1)
+            {
+                center->links |= mask;
+                neighbor->links |= opposite;
+            }
+            else 
+            {
+                center->links &= (uint8_t)~mask;
+                neighbor->links &= (uint8_t)~opposite;
+            }
         }
-        else 
+    }
+    
+    for(uint8_t dir = 0; dir < 8; dir += 2)
+    {
+        mask = (uint8_t)1 << dir;
+        opposite = (uint8_t)1 << mod(dir + 4, 8);
+        dx = dir_to_coords[dir][0];
+        dy = dir_to_coords[dir][1];
+        neighbor = Grid_Get(x + dx, y + dy);
+        
+        if(just_remove)
         {
-            center->links &= (uint8_t)~mask;
-            neighbor->links &= (uint8_t)~opposite;
+            continue;
         }
-        // printf("mask %d links %d n_id %d, dx %d, dy %d\n", mask, center->links, neighbor->id, dx, dy);
+        
+        if(Count_Bits_8(center->links) < max_links
+        && Count_Bits_8(neighbor->links) < max_links)
+        {
+            if(neighbor->type == 1)
+            {
+                center->links |= mask;
+                neighbor->links |= opposite;
+            }
+            else 
+            {
+                center->links &= (uint8_t)~mask;
+                neighbor->links &= (uint8_t)~opposite;
+            }
+        }
     }
 }
 
@@ -731,7 +808,7 @@ void Global_Time_Update()
         
         if(global_time == 0 || global_time == 127)
         {
-            Grid_Update();
+            Grid_Maintain();
         }
     }
 }

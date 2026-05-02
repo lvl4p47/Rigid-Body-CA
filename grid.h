@@ -9,6 +9,9 @@ extern uint8_t global_time;
 
 typedef struct {
     uint32_t id;
+    uint8_t state;
+    uint8_t buf_state;
+    uint8_t des_state;
     uint8_t type;
     uint8_t matter;
     uint8_t energy;
@@ -38,6 +41,7 @@ extern uint16_t cycles;
 extern uint32_t total_cycles;
 extern uint32_t max_strength;
 extern uint16_t max_light, sun_height;
+extern uint8_t max_states;
 
 typedef enum
 {
@@ -59,9 +63,11 @@ static inline Tile* Grid_Get(int16_t x, int16_t y)
     return &grid_array[y1][x1];
 }
 
-void Grid_Set(int16_t x, int16_t y, uint32_t id, uint8_t type);
+void Grid_Set(int16_t x, int16_t y, uint8_t type);
 void Grid_Move(int16_t x, int16_t y, int16_t dx, int16_t dy);
+void Grid_Maintain();
 void Grid_Update();
+void Grid_Signal(int16_t x, int16_t y, uint8_t state);
 
 int32_t Rec_Can_Move(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength, uint8_t rigid, uint8_t linked);
 void Rec_Move(int16_t x, int16_t y, int8_t dx, int8_t dy, uint32_t *moved);
@@ -84,5 +90,19 @@ uint16_t Rec_Find_Light(int16_t x, int16_t y, int32_t strength, uint16_t directi
 
 void Gravity();
 void Illuminate();
+
+// CELLS
+
+#define MAX_CELLS 4000000
+
+typedef struct {
+    uint16_t x;
+    uint16_t y;
+    uint8_t used;
+    uint32_t prev;
+    uint32_t next;
+} Cell;
+
+extern Cell cells[MAX_CELLS];
 
 #endif

@@ -89,12 +89,18 @@ void Events_Handle()
                 dest_x = x;
                 dest_y = y;
                 
+                Grid_Signal(x, y, 2);
+                
             }
             if (e.button.button == SDL_BUTTON_MIDDLE) 
             {
                 mmb_held = 1;
                 
-                Rec_Connect(x, y, 10);
+                Rec_Connect(x, y, 100);
+                // if(Grid_Get(x, y)->id == 0)
+                    
+                // else
+                //     Cell_Destroy(Grid_Get(x, y)->id);
             }
         }
         if (e.type == SDL_MOUSEBUTTONUP) {
@@ -120,7 +126,11 @@ void Events_Handle()
 
             if (rmb_held == 1)
             {
-                Grid_Set(x, y, 0, 1);
+                if(Grid_Get(x, y)->type == 0)
+                {
+                    Grid_Set(x, y, 1);
+                    Cell_Create(x, y, 0);
+                }
             }
             if (mmb_held == 1)
             {

@@ -25,6 +25,7 @@ int main(int argc, char* args[])
         {
             Global_Time_Update();
             Gravity();
+            Cells_Update();
             
         }
         
@@ -33,7 +34,7 @@ int main(int argc, char* args[])
         Events_Process();
         
         Illuminate();
-        
+        // SDL_Delay(30);
         cur_tick = SDL_GetTicks64();
         
         if(slow_mode == 0)
@@ -49,7 +50,6 @@ int main(int argc, char* args[])
             last_frame = cur_tick;
             Screen_Clear();
             Screen_Draw();
-            // SDL_Delay(100);
         }
         
         if(cur_tick - prev_tick > threshold || leak_detector)

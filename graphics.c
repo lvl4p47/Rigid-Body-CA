@@ -5,7 +5,7 @@ SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 
 uint8_t draw_links = 01, draw_dots = 0;
-uint8_t display_mode = RESOURCES;
+uint8_t display_mode = STATES;
 uint32_t prev_matter = 0, prev_energy = 0;
 uint32_t total_matter = 0;
 uint32_t total_energy = 0;
@@ -107,6 +107,76 @@ void Grid_Draw()
                 r = (matter + (type == 1)) * 255 / (max_matter + 1);
                 g = (type == 1) * 127;
                 b = energy;
+                
+                rect.x = j * CELL_SIZE;
+                rect.y = i * CELL_SIZE;
+                
+                SDL_SetRenderDrawColor(renderer, r, g, b, 255);
+                SDL_RenderFillRect(renderer, &rect);
+                
+                if(draw_links == 0) continue;
+                
+                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                
+                uint8_t mask;
+                uint8_t draw_dot = 0;
+                int16_t dx, dy, cx, cy;
+                cx = rect.x + CELL_SIZE / 2;
+                cy = rect.y + CELL_SIZE / 2;
+                for(uint8_t dir = 0; dir < 8; dir++)
+                {
+                    dx = dir_to_coords[dir][0] * CELL_SIZE / 2;
+                    dy = dir_to_coords[dir][1] * CELL_SIZE / 2;
+                    mask = (uint8_t)1 << dir;
+                    
+                    if(links & mask)
+                    {
+                        SDL_RenderDrawLineF(renderer, cx, cy, cx + dx, cy + dy);
+                        draw_dot = 1;
+                    }
+                }
+                
+                if(draw_dot && draw_dots)
+                {
+                    dot.x = j * CELL_SIZE + CELL_SIZE / 2 - 1;
+                    dot.y = i * CELL_SIZE + CELL_SIZE / 2 - 1;
+                    SDL_RenderFillRect(renderer, &dot);
+                }
+            }
+        }
+        break;
+    case STATES:
+        for(int i = 0; i < grid_height; i++)
+        {
+            for(int j = 0; j < grid_width; j++)
+            {
+                tile = Grid_Get(j, i);
+                int state = tile->state;
+                int type = tile->type;
+                int active = tile->id;
+                uint8_t links = tile->links;
+                
+                int r = 0, g = 0, b = 0;
+                
+                if(active == 0) continue;
+                    
+                r = (state == 1) * 255;
+                g = state * 255 % max_states;
+                b = 255 - g;
+                
+                if(type != 1)
+                {
+                    r /= 2;
+                    g /= 2;
+                    b /= 2;
+                }
+                
+                if(state == 0)
+                {
+                    r /= 2;
+                    g /= 2;
+                    b /= 2;
+                }
                 
                 rect.x = j * CELL_SIZE;
                 rect.y = i * CELL_SIZE;
