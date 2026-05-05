@@ -34,7 +34,7 @@ void Events_Handle()
             }
             if(e.key.keysym.sym == SDLK_r)
             {
-                Grid_Reset(0, 1000);
+                // Grid_Reset(0, 1000);
             }
             if(e.key.keysym.sym == SDLK_t)
             {
@@ -55,6 +55,24 @@ void Events_Handle()
             if(e.key.keysym.sym == SDLK_l)
             {
                 draw_links = 1 - draw_links;
+            }
+            if(e.key.keysym.sym == SDLK_z)
+            {
+                if(temp_control < 0)
+                    temp_control *= 2;
+                else
+                    temp_control = -1;
+            }
+            if(e.key.keysym.sym == SDLK_x)
+            {
+                temp_control = 0;
+            }
+            if(e.key.keysym.sym == SDLK_c)
+            {
+                if(temp_control > 0)
+                    temp_control *= 2;
+                else
+                    temp_control = 1;
             }
             if(e.key.keysym.sym == SDLK_ESCAPE)
             {
@@ -96,7 +114,9 @@ void Events_Handle()
             {
                 mmb_held = 1;
                 
-                // Rec_Connect(x, y, 100);
+                // particles[Grid_Get(x, y)->id].energy = 60000;
+                
+                Rec_Connect(x, y, 100);
                 // if(Grid_Get(x, y)->id == 0)
                     
                 // else
@@ -129,23 +149,34 @@ void Events_Handle()
                 if(Grid_Get(x, y)->type == 0)
                 {
                     Grid_Set(x, y, 1);
-                    Cell_Create(x, y, 0, 1);
+                    switch (rnd() % 1)
+                    {
+                    case 0:
+                        Cell_Create(x, y, 0, 1);
+                        break;
+                    case 1:
+                        Cell_Create(x, y, 0, 6);
+                        break;
+                    case 2:
+                        Cell_Create(x, y, 0, 7);
+                        break;
+                    case 3:
+                        Cell_Create(x, y, 0, 8);
+                        break;
+                    
+                    default:
+                        break;
+                    }
                 }
             }
             if (mmb_held == 1)
             {
-                if(Grid_Get(x, y)->type == 0)
-                {
-                    Grid_Set(x, y, 1);
-                    Cell_Create(x, y, 0, 8);
-                }
+                
             }
             if (lmb_held == 1)
             {
                 dest_x = x;
                 dest_y = y;
-                
-                
             }
         }
     }
@@ -186,6 +217,7 @@ void Events_Process()
     
     if(Grid_Get(grab_x, grab_y)->type != 0 && str > 0)
     {
-        Rec_Push(grab_x, grab_y, sx, sy, str, 0);
+        // Rec_Push(grab_x, grab_y, sx, sy, str, 0);
+        Rec_Push_Flexible(grab_x, grab_y, sx, sy, str);
     }
 }

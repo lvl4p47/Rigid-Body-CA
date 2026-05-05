@@ -61,6 +61,27 @@ static inline uint32_t fast_root(uint32_t x)
 
     return ans;
 }
+
+static inline uint32_t cubic_root(uint32_t x)
+{
+    uint32_t min = 1, max = x;
+    uint32_t ans = (min + max) / 2;
+    uint32_t cube = ans * ans * ans;
+    uint32_t step = 0;
+    
+    while(abs(cube - x) > 1 && step < 100)
+    {
+        if(cube < x) min = ans;
+        if(cube > x) max = ans;
+        
+        ans = (min + max) / 2;
+        cube = ans * ans * ans;
+        step++;
+    }
+
+    return ans;
+}
+
 static inline uint32_t lg(uint32_t a, uint32_t pow)
 {
     int ans = 1;
