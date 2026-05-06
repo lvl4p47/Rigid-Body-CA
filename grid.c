@@ -334,7 +334,7 @@ void Rec_Move(int16_t x, int16_t y, int8_t dx, int8_t dy, uint32_t *moved)
         
         return;
     }
-    // printf("2\n");
+    // printf("rec_move\n");
     // if(local_debug) printf("x %d y %d str %d on_edge %d\n", x, y, str, center->on_edge);
     
     neighbor = Grid_Get(x + dx, y + dy);
@@ -349,8 +349,6 @@ void Rec_Move(int16_t x, int16_t y, int8_t dx, int8_t dy, uint32_t *moved)
         }
         
     }
-    else if(neighbor->type == 1)
-        problems = 1;
     
     if(neighbor->type == 0)
     {
@@ -560,11 +558,11 @@ void Rec_Clean(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t depth)
 
 uint32_t Rec_Push(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength, uint8_t rigid)
 {
+    // this function moves the particles
     int32_t cur_str = strength;
     int32_t ret;
     uint32_t moved = 0;
     
-    do
     {
         
         ret = Rec_Can_Move(x, y, dx, dy, cur_str, rigid, 1);
@@ -583,100 +581,7 @@ uint32_t Rec_Push(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength, 
         }
         
     }
-    while(cur_str > 0 && rigid == 0);
     return moved;
-}
-
-uint32_t Rec_Push_Away(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength, uint8_t rigid)
-{
-    int32_t cur_str = strength;
-    int32_t ret;
-    uint32_t moved = 0;
-    while(cur_str > 0)
-    {
-        ret = Rec_Can_Move(x, y, -dx, -dy, cur_str, 1, 0);
-        Rec_Clean(x, y, -dx, -dy, cur_str);
-        if(ret > 0) 
-        {
-            ret = Rec_Can_Move(x, y, dx, dy, cur_str, rigid, 1);
-            if(ret <= 0) 
-            {
-                Rec_Move(x, y, dx, dy, &moved);
-                cur_str = -1;
-            }
-            else
-            {
-                Rec_Clean(x, y, dx, dy, cur_str);
-                cur_str -= 1; 
-            }
-        }
-        cur_str -= 1;
-        
-    }
-    return moved;
-}
-
-uint32_t Rec_Push_Attempt(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength, uint8_t rigid)
-{
-    uint32_t ret = Rec_Push(x, y, dx, dy, strength, rigid);
-    if(ret <= 0) return 0;
-    if(rnd() % ret != 0)
-    {
-        Rec_Push(x + dx, y + dy, -dx, -dy, strength, rigid);
-        return 0;
-    }
-    return ret;
-}
-
-uint32_t Rec_Push_Flexible(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength)
-{
-    int32_t cur_str = 1;
-    int32_t ret;
-    uint32_t moved = 0;
-    
-    do
-    {
-        
-        ret = Rec_Can_Move(x, y, dx, dy, cur_str, 0, 1);
-        
-        if(ret <= 0) 
-        {
-            Rec_Push_Attempt(x, y, dx, dy, cur_str, 0);
-            cur_str = strength + 1;
-        }
-        else
-        {
-            Rec_Clean(x, y, dx, dy, cur_str);
-            cur_str++;
-        }
-        
-    }
-    while(cur_str <= strength);
-    return moved;
-}
-
-int32_t Rec_Push_CoM(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength)
-{
-    uint32_t forward = Rec_Push_Away(x, y, dx, dy, strength, 0);
-    int32_t attempts = 0;
-    uint32_t back = 0;
-    
-    if(forward > 0)
-    {
-        while(attempts > 0)
-        {
-            back = Rec_Push_Attempt(x + dx, y + dy, -dx, -dy, max_strength, 1);
-            if(back > 0) break;
-            attempts--;
-        }
-    }
-    else
-        back = Rec_Push_Away(x, y, -dx, -dy, strength, 1);
-    
-    if( (forward > 0) && !(back > 0) ) return 1;
-    if( !(forward > 0) && (back > 0) ) return -1;
-    
-    return 0;
 }
 
 void Rec_Link_All(int16_t x, int16_t y, int32_t strength)

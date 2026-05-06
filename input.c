@@ -58,21 +58,15 @@ void Events_Handle()
             }
             if(e.key.keysym.sym == SDLK_z)
             {
-                if(temp_control < 0)
-                    temp_control *= 2;
-                else
-                    temp_control = -1;
+                
             }
             if(e.key.keysym.sym == SDLK_x)
             {
-                temp_control = 0;
+                
             }
             if(e.key.keysym.sym == SDLK_c)
             {
-                if(temp_control > 0)
-                    temp_control *= 2;
-                else
-                    temp_control = 1;
+                
             }
             if(e.key.keysym.sym == SDLK_ESCAPE)
             {
@@ -149,7 +143,7 @@ void Events_Handle()
                 if(Grid_Get(x, y)->type == 0)
                 {
                     Grid_Set(x, y, 1);
-                    switch (rnd() % 1)
+                    switch (rnd() % 4)
                     {
                     case 0:
                         Cell_Create(x, y, 0, 1);
@@ -177,6 +171,8 @@ void Events_Handle()
             {
                 dest_x = x;
                 dest_y = y;
+                
+                Phero_Set(x, y, 0, 255);
             }
         }
     }
@@ -217,7 +213,8 @@ void Events_Process()
     
     if(Grid_Get(grab_x, grab_y)->type != 0 && str > 0)
     {
-        // Rec_Push(grab_x, grab_y, sx, sy, str, 0);
-        Rec_Push_Flexible(grab_x, grab_y, sx, sy, str);
+        // printf("pushing ");
+        Rec_Push(grab_x, grab_y, sx, sy, str, 0);
+        // Rec_Push_Flexible(grab_x, grab_y, sx, sy, str);
     }
 }

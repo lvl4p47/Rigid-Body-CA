@@ -63,10 +63,6 @@ void Rec_Move(int16_t x, int16_t y, int8_t dx, int8_t dy, uint32_t *moved);
 uint8_t Active_Neighbors(int16_t x, int16_t y);
 void Rec_Clean(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t depth);
 uint32_t Rec_Push(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength, uint8_t rigid);
-uint32_t Rec_Push_Away(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength, uint8_t rigid);
-uint32_t Rec_Push_Attempt(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength, uint8_t rigid);
-uint32_t Rec_Push_Flexible(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength);
-int32_t Rec_Push_CoM(int16_t x, int16_t y, int8_t dx, int8_t dy, int32_t strength);
 void Rec_Link_All(int16_t x, int16_t y, int32_t strength);
 void Link_Two(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 void Unlink_Two(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
@@ -76,11 +72,6 @@ uint8_t Is_Membrane(int16_t x, int16_t y);
 void Global_Time_Update();
 void Phero_Set(int16_t x, int16_t y, uint8_t type, uint8_t range);
 uint8_t Phero_Get(int16_t x, int16_t y, uint8_t type, uint8_t update);
-
-uint16_t Rec_Find_Light(int16_t x, int16_t y, int32_t strength, uint16_t direction, uint8_t source);
-
-void Gravity();
-void Illuminate();
 
 // CELLS
 
