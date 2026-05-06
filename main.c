@@ -24,7 +24,6 @@ int main(int argc, char* args[])
         if(!pause) 
         {
             Global_Time_Update();
-            Gravity();
             Cells_Update();
             
         }
@@ -33,7 +32,6 @@ int main(int argc, char* args[])
 
         Events_Process();
         
-        Illuminate();
         // SDL_Delay(1);
         cur_tick = SDL_GetTicks64();
         
